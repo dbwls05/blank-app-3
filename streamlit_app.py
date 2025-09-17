@@ -1,4 +1,4 @@
-# streamlit_app.py - 탭별 독립 사이드바 + 그래프별 범위 조정 기능
+# streamlit_app.py - 탭별 독립 사이드바 + 연도 범위 필터링 + 탭 간격 조정
 
 import numpy as np
 import pandas as pd
@@ -24,6 +24,18 @@ if font_path.exists():
 else:
     font_prop = fm.FontProperties()
 rcParams["axes.unicode_minus"] = False
+
+# ==============================
+# CSS로 탭 간격 조정
+# ==============================
+st.markdown("""
+    <style>
+        .stTabs [data-baseweb="tab-list"] button {
+            padding: 10px 20px;
+            margin: 0 5px;
+        }
+    </style>
+""", unsafe_allow_html=True)
 
 # ==============================
 # 데이터 소스 설정
@@ -150,40 +162,30 @@ def main():
     st.set_page_config(page_title="🌊 해수온 상승과 바다의 미래", layout="wide")
     st.title("🌊 해수온 상승과 바다의 미래: 변화와 대응 전략")
     
-    # 탭 구조
+    # 탭 구조 (CSS로 간격 조정됨)
     tab_intro, tab_analysis1, tab_analysis2, tab_conclusion, tab_references = st.tabs([
         "서론", 
-        "본론 1: 해수온 상승과 해양 환경 변화", 
-        "본론 2: 해양 생태계와 사회경제적 영향", 
+        "본론 1", 
+        "본론 2", 
         "결론",
         "참고자료"
     ])
     
-    # === 탭 1: 서론 (사이드바 없음) ===
+    # === 탭 1: 서론 ===
     with tab_intro:
-        # ✅ 서론 전용 사이드바 (아무것도 없음)
-        with st.sidebar:
-            st.header("📌 서론")
-            st.info("이 탭에서는 별도의 설정이 필요하지 않습니다.")
-        
         st.header("서론 : 우리가 이 보고서를 쓰게 된 이유")
         st.markdown("""
         21세기 인류가 직면한 가장 큰 도전 중 하나는 기후 위기이다. 기후 위기의 다양한 현상 중에서도 해수온 상승은 단순히 바다만의 문제가 아니라, 지구 생태계 전체와 인류 사회의 미래와도 직결된다. 최근 수십 년간 바다는 점점 뜨거워지고 있으며, 이로 인해 해양 생태계는 심각한 변화의 소용돌이에 휘말리고 있다.
         
         따라서 본 보고서는 해수온 상승이 해양 환경과 생물 다양성, 나아가 사회·경제적 영역에까지 미치는 영향을 분석하고, 바다의 미래를 지키기 위한 대응 전략을 제안하는 데 목적이 있다.
         """)
-        
-        st.image(
-            "https://coralreefwatch.noaa.gov/product/5km/lnav/latest/5km_BAA_G.png",
-            caption="NOAA 산호 백화 경보 시스템 (Bleaching Alert Area) - 2024년 제4차 글로벌 백화 사건 공식 확인",
-            use_container_width=True
-        )
     
-    # === ✅ 탭 2: 본론 1 — 해수온 지도 + 그래프 범위 조정 ===
+    # === ✅ 탭 2: 본론 1 — 해수온 지도 + 연도 범위 필터링 ===
     with tab_analysis1:
-        # ✅ 본론1 전용 사이드바
+        # ✅ 본론1 전용 사이드바 (이 탭 진입 시 이 설정만 표시)
         with st.sidebar:
-            st.header("🌍 해수온 지도 설정")
+            st.header("📊 본론 1")
+            st.subheader("🌍 해수온 지도")
             
             # 날짜 범위 로드
             with st.spinner("사용 가능한 날짜 불러오는 중..."):
@@ -233,10 +235,10 @@ def main():
             else:
                 projection = ccrs.PlateCarree()
         
-        st.header("본론 1. 데이터로 보는 해수온 상승과 해양 환경 변화")
+        st.header("본론 1. 해수온 상승과 해양 환경 변화")
         
         # ✅ 해수온 지도 탐색기
-        st.subheader("🌍 실시간 해수온 편차 지도 탐색")
+        st.subheader("🌍 해수온 편차 지도")
         with st.spinner(f"{selected_year}년 {selected_month}월 데이터 로딩 중..."):
             try:
                 da = load_anomaly(target_date, bbox=bbox)
@@ -271,115 +273,141 @@ def main():
                     mime="text/csv",
                 )
         
-        # ✅ 해수온 추이 그래프 (범위 조정 기능 추가)
+        # ✅ 해수온 추이 그래프 (연도 범위 필터링)
         st.markdown("---")
         st.subheader("1-1. 해수온 상승 추이 분석")
         
         # ✅ 이 그래프 전용 사이드바 설정
         with st.sidebar:
             st.markdown("---")
-            st.subheader("📈 해수온 추이 그래프 설정")
-            korean_temp_min = st.slider("Y축 최소값", 10.0, 20.0, 14.0, 0.1, key="ktemp_min")
-            korean_temp_max = st.slider("Y축 최대값", 15.0, 25.0, 20.0, 0.1, key="ktemp_max")
+            st.subheader("📈 해수온 추이 그래프")
+            korean_temp_data = pd.DataFrame({
+                'year': list(range(2000, 2024)),
+                'avg_sea_temp': [
+                    14.2, 14.3, 14.5, 14.6, 14.7, 14.8, 15.0, 15.1, 15.2, 15.3,
+                    15.5, 15.6, 15.8, 15.9, 16.1, 16.3, 16.4, 16.6, 16.8, 17.0,
+                    17.2, 17.5, 17.8, 18.1
+                ]
+            })
+            min_year_ktemp = int(korean_temp_data['year'].min())
+            max_year_ktemp = int(korean_temp_data['year'].max())
+            start_year_ktemp = st.slider("시작 연도", min_year_ktemp, max_year_ktemp, min_year_ktemp, key="ktemp_start")
+            end_year_ktemp = st.slider("종료 연도", min_year_ktemp, max_year_ktemp, max_year_ktemp, key="ktemp_end")
         
-        korean_temp = pd.DataFrame({
-            'year': list(range(2000, 2024)),
-            'avg_sea_temp': [
-                14.2, 14.3, 14.5, 14.6, 14.7, 14.8, 15.0, 15.1, 15.2, 15.3,
-                15.5, 15.6, 15.8, 15.9, 16.1, 16.3, 16.4, 16.6, 16.8, 17.0,
-                17.2, 17.5, 17.8, 18.1
-            ]
-        })
+        # 연도 범위로 필터링
+        filtered_ktemp = korean_temp_data[
+            (korean_temp_data['year'] >= start_year_ktemp) & 
+            (korean_temp_data['year'] <= end_year_ktemp)
+        ]
         
-        fig1 = px.line(korean_temp, x='year', y='avg_sea_temp',
-                     title='한반도 주변 평균 해수온 추이 (2000-2023)',
+        fig1 = px.line(filtered_ktemp, x='year', y='avg_sea_temp',
+                     title=f'한반도 주변 평균 해수온 추이 ({start_year_ktemp}-{end_year_ktemp})',
                      labels={'year': '연도', 'avg_sea_temp': '평균 해수온 (°C)'},
                      markers=True)
-        fig1.update_yaxes(range=[korean_temp_min, korean_temp_max])
         st.plotly_chart(fig1, use_container_width=True)
         
-        # ✅ 산호 백화 그래프 (범위 조정 기능 추가)
+        # ✅ 산호 백화 그래프 (연도 범위 필터링)
         st.subheader("1-2. 해수온 상승과 해양 환경 변화")
         
         # ✅ 이 그래프 전용 사이드바 설정
         with st.sidebar:
             st.markdown("---")
             st.subheader("📈 산호 백화 그래프 설정")
-            bleaching_min = st.slider("Y축 최소값", 0, 50, 0, 5, key="bleach_min")
-            bleaching_max = st.slider("Y축 최대값", 50, 100, 100, 5, key="bleach_max")
+            bleaching_data = pd.DataFrame({
+                'year': list(range(2010, 2024)),
+                'affected_reef_pct': [
+                    15, 18, 20, 35, 75, 60, 45, 50, 48, 55,
+                    65, 80, 90, 95
+                ]
+            })
+            min_year_bleach = int(bleaching_data['year'].min())
+            max_year_bleach = int(bleaching_data['year'].max())
+            start_year_bleach = st.slider("시작 연도", min_year_bleach, max_year_bleach, min_year_bleach, key="bleach_start")
+            end_year_bleach = st.slider("종료 연도", min_year_bleach, max_year_bleach, max_year_bleach, key="bleach_end")
         
-        bleaching = pd.DataFrame({
-            'year': list(range(2010, 2024)),
-            'affected_reef_pct': [
-                15, 18, 20, 35, 75, 60, 45, 50, 48, 55,
-                65, 80, 90, 95
-            ]
-        })
+        # 연도 범위로 필터링
+        filtered_bleach = bleaching_data[
+            (bleaching_data['year'] >= start_year_bleach) & 
+            (bleaching_data['year'] <= end_year_bleach)
+        ]
         
-        fig2 = px.line(bleaching, x='year', y='affected_reef_pct',
-                     title='산호초 영향률 추이 (전 세계 기준)',
+        fig2 = px.line(filtered_bleach, x='year', y='affected_reef_pct',
+                     title=f'산호초 영향률 추이 ({start_year_bleach}-{end_year_bleach})',
                      labels={'year': '연도', 'affected_reef_pct': '영향 받은 산호초 (%)'},
                      markers=True)
-        fig2.update_yaxes(range=[bleaching_min, bleaching_max])
         st.plotly_chart(fig2, use_container_width=True)
     
-    # === ✅ 탭 3: 본론 2 — 생물 다양성 & 어업생산량 그래프 범위 조정 ===
+    # === ✅ 탭 3: 본론 2 — 생물 다양성 & 어업생산량 (연도 범위 필터링) ===
     with tab_analysis2:
-        # ✅ 본론2 전용 사이드바
+        # ✅ 본론2 전용 사이드바 (탭 전환 시 이 설정만 표시)
         with st.sidebar:
-            st.header("📊 본론 2 설정")
+            st.markdown("---")
+            st.header("📊 본론 2")
             
-            st.subheader("📈 생물 다양성 그래프")
-            species_min = st.slider("Y축 최소값", 0, 30, 10, 1, key="species_min")
-            species_max = st.slider("Y축 최대값", 30, 60, 50, 1, key="species_max")
+            # 생물 다양성 데이터
+            species_data = pd.DataFrame({
+                'year': list(range(2000, 2024)),
+                'vulnerable_species_pct': [
+                    12.5, 13.0, 13.5, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0,
+                    22.0, 24.0, 26.0, 28.0, 30.0, 32.0, 34.0, 36.0, 38.0, 40.0,
+                    42.0, 44.0, 46.0, 48.0
+                ]
+            })
+            st.subheader("📈 생물 다양성 그래프 설정")
+            min_year_species = int(species_data['year'].min())
+            max_year_species = int(species_data['year'].max())
+            start_year_species = st.slider("시작 연도", min_year_species, max_year_species, min_year_species, key="species_start")
+            end_year_species = st.slider("종료 연도", min_year_species, max_year_species, max_year_species, key="species_end")
             
             st.markdown("---")
-            st.subheader("📈 어업생산량 그래프")
-            fishery_min = st.slider("Y축 최소값", 800, 1100, 900, 10, key="fishery_min")
-            fishery_max = st.slider("Y축 최대값", 1100, 1300, 1250, 10, key="fishery_max")
+            
+            # 어업생산량 데이터
+            fishery_data = pd.DataFrame({
+                'year': list(range(2000, 2024)),
+                'fishery_production': [
+                    1245, 1230, 1215, 1200, 1185, 1170, 1155, 1140, 1125, 1110,
+                    1095, 1080, 1065, 1050, 1035, 1020, 1005, 990, 975, 960,
+                    945, 930, 915, 900
+                ]
+            })
+            st.subheader("📈 어업생산량 그래프 설정")
+            min_year_fishery = int(fishery_data['year'].min())
+            max_year_fishery = int(fishery_data['year'].max())
+            start_year_fishery = st.slider("시작 연도", min_year_fishery, max_year_fishery, min_year_fishery, key="fishery_start")
+            end_year_fishery = st.slider("종료 연도", min_year_fishery, max_year_fishery, max_year_fishery, key="fishery_end")
         
         st.header("본론 2. 사라지는 생명: 해수온 상승이 해양 생태계에 미치는 영향")
         
         st.subheader("2-1. 해양 생물 다양성 위기")
-        species = pd.DataFrame({
-            'year': list(range(2000, 2024)),
-            'vulnerable_species_pct': [
-                12.5, 13.0, 13.5, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0,
-                22.0, 24.0, 26.0, 28.0, 30.0, 32.0, 34.0, 36.0, 38.0, 40.0,
-                42.0, 44.0, 46.0, 48.0
-            ]
-        })
         
-        fig3 = px.line(species, x='year', y='vulnerable_species_pct',
-                     title='해양 취약종 비율 증가 추이 (2000-2023)',
+        # 연도 범위로 필터링
+        filtered_species = species_data[
+            (species_data['year'] >= start_year_species) & 
+            (species_data['year'] <= end_year_species)
+        ]
+        
+        fig3 = px.line(filtered_species, x='year', y='vulnerable_species_pct',
+                     title=f'해양 취약종 비율 증가 추이 ({start_year_species}-{end_year_species})',
                      labels={'year': '연도', 'vulnerable_species_pct': '취약종 비율 (%)'},
                      markers=True)
-        fig3.update_yaxes(range=[species_min, species_max])
         st.plotly_chart(fig3, use_container_width=True)
         
         st.subheader("2-2. 사회·경제적 파급 효과")
-        fishery = pd.DataFrame({
-            'year': list(range(2000, 2024)),
-            'fishery_production': [
-                1245, 1230, 1215, 1200, 1185, 1170, 1155, 1140, 1125, 1110,
-                1095, 1080, 1065, 1050, 1035, 1020, 1005, 990, 975, 960,
-                945, 930, 915, 900
-            ]
-        })
         
-        fig4 = px.area(fishery, x='year', y='fishery_production',
-                     title='한국 어업생산량 추이 (2000-2023, 단위: 천톤)',
+        # 연도 범위로 필터링
+        filtered_fishery = fishery_data[
+            (fishery_data['year'] >= start_year_fishery) & 
+            (fishery_data['year'] <= end_year_fishery)
+        ]
+        
+        fig4 = px.area(filtered_fishery, x='year', y='fishery_production',
+                     title=f'한국 어업생산량 추이 ({start_year_fishery}-{end_year_fishery}, 단위: 천톤)',
                      labels={'year': '연도', 'fishery_production': '생산량 (천톤)'},
                      line_shape='spline')
-        fig4.update_yaxes(range=[fishery_min, fishery_max])
         st.plotly_chart(fig4, use_container_width=True)
     
-    # === 탭 4: 결론 (간단한 사이드바) ===
+    # === 탭 4: 결론 (사이드바 없음) ===
     with tab_conclusion:
-        with st.sidebar:
-            st.header("🎯 결론 요약")
-            st.info("핵심 통계는 자동 계산됩니다.")
-        
         st.header("결론")
         st.markdown("""
         본 보고서는 해수온 상승이 단순한 해양 현상이 아닌, 해수온 상승 → 해양 환경 변화 → 해양 생물 다양성 위기 → 사회·경제적 파급 효과로 이어지는 구조적 문제임을 확인했다. 바다의 변화는 곧 인류의 삶과 직결되며, 이는 미래 세대의 지속 가능한 생존 조건과도 맞닿아 있다.
@@ -402,17 +430,8 @@ def main():
         with col3:
             st.metric("어업생산량 감소율 (2000-2023)", "-28%", "900천톤 (2023년)")
     
-    # === 탭 5: 참고자료 (참고자료 전용 사이드바) ===
+    # === 탭 5: 참고자료 (사이드바 없음) ===
     with tab_references:
-        with st.sidebar:
-            st.header("📚 참고자료")
-            st.markdown("""
-            - NOAA OISST
-            - NOAA CRW
-            - KODC
-            - 해양수산부
-            """)
-        
         st.header("📚 참고자료 및 데이터 출처")
         st.markdown("""
         ### NOAA OISST v2.1 데이터
@@ -424,6 +443,7 @@ def main():
         ### NOAA Coral Reef Watch
         - **공식 사이트**: https://coralreefwatch.noaa.gov
         - **2024년 4월**: 제4차 글로벌 산호 백화 사건 공식 확인
+        - **2023년 12월**: Bleaching Alert Level 3-5 도입 (극심한 열 스트레스 대응)
         
         ### 국립해양조사원 (KODC)
         - **공식 사이트**: https://www.kodc.go.kr
