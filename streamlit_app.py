@@ -1,4 +1,4 @@
-# streamlit_app.py - 탭별 독립 사이드바 + 연도 범위 필터링 + 탭 간격 조정
+# streamlit_app.py - 탭별 독립 사이드바 + 연도 범위 필터링 + 보고서 본문 삽입
 
 import numpy as np
 import pandas as pd
@@ -41,7 +41,7 @@ st.markdown("""
 # 데이터 소스 설정
 # ==============================
 
-# NOAA OISST v2.1 ERDDAP 엔드포인트 (AVHRR-only, anomaly 포함)
+# NOAA OISST v2.1 ERDDAP 엔드포인트
 ERDDAP_URL = "https://erddap.aoml.noaa.gov/hdb/erddap/griddap/SST_OI_DAILY_1981_PRESENT_T"
 
 def _open_ds(url_base: str):
@@ -162,7 +162,7 @@ def main():
     st.set_page_config(page_title="🌊 해수온 상승과 바다의 미래", layout="wide")
     st.title("🌊 해수온 상승과 바다의 미래: 변화와 대응 전략")
     
-    # 탭 구조 (CSS로 간격 조정됨)
+    # 탭 구조
     tab_intro, tab_analysis1, tab_analysis2, tab_conclusion, tab_references = st.tabs([
         "서론", 
         "본론 1", 
@@ -180,9 +180,9 @@ def main():
         따라서 본 보고서는 해수온 상승이 해양 환경과 생물 다양성, 나아가 사회·경제적 영역에까지 미치는 영향을 분석하고, 바다의 미래를 지키기 위한 대응 전략을 제안하는 데 목적이 있다.
         """)
     
-    # === ✅ 탭 2: 본론 1 — 해수온 지도 + 연도 범위 필터링 ===
+    # === ✅ 탭 2: 본론 1 — 해수온 지도 + 해수온 추이 + 산호 백화 ===
     with tab_analysis1:
-        # ✅ 본론1 전용 사이드바 (이 탭 진입 시 이 설정만 표시)
+        # ✅ 본론1 전용 사이드바
         with st.sidebar:
             st.header("📊 본론 1")
             st.subheader("🌍 해수온 지도")
@@ -235,7 +235,7 @@ def main():
             else:
                 projection = ccrs.PlateCarree()
         
-        st.header("본론 1. 해수온 상승과 해양 환경 변화")
+        st.header("본론 1. 데이터로 보는 해수온 상승과 해양 환경 변화")
         
         # ✅ 해수온 지도 탐색기
         st.subheader("🌍 해수온 편차 지도")
@@ -273,9 +273,19 @@ def main():
                     mime="text/csv",
                 )
         
+        # ✅ 보고서 본문 삽입 — 해수온 상승과 해양 환경 변화
+        st.markdown("""
+        ### 1-2. 해수온 상승과 해양 환경 변화
+        
+        해수온 상승은 산호 백화 현상, 해양 산성화, 해류 변화를 불러일으킨다. 특히 열대와 아열대 지역의 산호초는 수온 변화에 민감하여, 단 몇 도의 상승만으로도 대규모 백화 현상이 발생한다.
+        
+        ➡ **핵심 메시지**: 해수온 상승이 산호 생태계에 직접적 피해를 준다는 것을 직관적으로 보여준다.  
+        또한 어종 분포가 북상하면서 기존 어장이 축소되고, 전통적인 어업 방식이 흔들리고 있다. 이는 곧 사회·경제적 위기로 이어진다.
+        """)
+        
         # ✅ 해수온 추이 그래프 (연도 범위 필터링)
         st.markdown("---")
-        st.subheader("1-1. 해수온 상승 추이 분석")
+        st.subheader("📈 1-1. 해수온 상승 추이 분석")
         
         # ✅ 이 그래프 전용 사이드바 설정
         with st.sidebar:
@@ -306,8 +316,17 @@ def main():
                      markers=True)
         st.plotly_chart(fig1, use_container_width=True)
         
+        # ✅ 보고서 본문 삽입 — 해수온 상승 추이 분석
+        st.markdown("""
+        지난 수십 년간 전 세계 평균 해수온은 꾸준히 상승해왔다. 특히 한반도 주변 해역은 전 세계 평균보다 빠른 속도로 온도가 오르고 있으며, 최근에는 ‘해양 열파(marine heatwave)’ 현상이 빈번하게 발생하고 있다.
+        
+        ➡ **핵심 메시지**: 해수온이 지속적으로 상승하며 최근 급격히 증가하고 있음을 보여준다.  
+        이러한 변화는 단순히 숫자상의 상승에 그치지 않고, 해양 생태계와 인류의 생활 전반에 중대한 영향을 미친다.
+        """)
+        
         # ✅ 산호 백화 그래프 (연도 범위 필터링)
-        st.subheader("1-2. 해수온 상승과 해양 환경 변화")
+        st.markdown("---")
+        st.subheader("🌡️ 산호 백화 현상 추이")
         
         # ✅ 이 그래프 전용 사이드바 설정
         with st.sidebar:
@@ -336,10 +355,17 @@ def main():
                      labels={'year': '연도', 'affected_reef_pct': '영향 받은 산호초 (%)'},
                      markers=True)
         st.plotly_chart(fig2, use_container_width=True)
+        
+        # ✅ 보고서 본문 삽입 — 산호 백화와 해양 환경 변화
+        st.markdown("""
+        NOAA의 관측에 따르면, 2023-2024년은 **제4차 글로벌 산호 백화 사건**이 공식 확인된 해입니다.  
+        해수온 1°C 상승만으로도 산호는 스트레스를 받아 백화 현상이 발생하며, 2°C 이상 지속되면 대규모 폐사로 이어집니다.  
+        이는 해양 생물 다양성의 핵심인 산호초 생태계의 붕괴를 의미하며, 의존하는 어류 종의 감소로 직결됩니다.
+        """)
     
-    # === ✅ 탭 3: 본론 2 — 생물 다양성 & 어업생산량 (연도 범위 필터링) ===
+    # === ✅ 탭 3: 본론 2 — 생물 다양성 & 어업생산량 ===
     with tab_analysis2:
-        # ✅ 본론2 전용 사이드바 (탭 전환 시 이 설정만 표시)
+        # ✅ 본론2 전용 사이드바
         with st.sidebar:
             st.markdown("---")
             st.header("📊 본론 2")
@@ -378,7 +404,7 @@ def main():
         
         st.header("본론 2. 사라지는 생명: 해수온 상승이 해양 생태계에 미치는 영향")
         
-        st.subheader("2-1. 해양 생물 다양성 위기")
+        st.subheader("🐠 2-1. 해양 생물 다양성 위기")
         
         # 연도 범위로 필터링
         filtered_species = species_data[
@@ -392,7 +418,15 @@ def main():
                      markers=True)
         st.plotly_chart(fig3, use_container_width=True)
         
-        st.subheader("2-2. 사회·경제적 파급 효과")
+        # ✅ 보고서 본문 삽입 — 해양 생물 다양성 위기
+        st.markdown("""
+        해수온 상승은 해양 생물 다양성을 위협한다. 토착 어종의 개체수는 감소하고, 일부 종은 더 차가운 수역으로 이동한다. 동시에 플랑크톤과 저서생물의 변화가 먹이사슬에 영향을 주어 해양 생태계의 균형이 흔들린다.
+        
+        ➡ **핵심 메시지**: 해양 생물 다양성이 점점 감소하고 있음을 보여준다.  
+        먹이사슬의 교란은 단순히 특정 어종의 문제에 그치지 않고, 해양 전체의 생태 안정성을 위협한다.
+        """)
+        
+        st.subheader("💰 2-2. 사회·경제적 파급 효과")
         
         # 연도 범위로 필터링
         filtered_fishery = fishery_data[
@@ -405,8 +439,16 @@ def main():
                      labels={'year': '연도', 'fishery_production': '생산량 (천톤)'},
                      line_shape='spline')
         st.plotly_chart(fig4, use_container_width=True)
+        
+        # ✅ 보고서 본문 삽입 — 사회·경제적 파급 효과
+        st.markdown("""
+        해수온 상승은 결국 인간의 삶에도 직접적인 충격을 준다. 수산업 생산량이 감소하면서 어업 수익이 줄고, 이는 곧 지역사회 경제와 식량 안보 문제로 이어진다. 특히 어업 의존도가 높은 해안 지역 주민들에게는 생존의 문제가 된다.
+        
+        ➡ **핵심 메시지**: 해수온 상승이 어업 수익 감소로 이어지고 있음을 시각적으로 보여준다.  
+        이러한 파급 효과는 단순히 경제 문제를 넘어 사회 구조 전반에 불안정을 가져올 수 있다.
+        """)
     
-    # === 탭 4: 결론 (사이드바 없음) ===
+    # === 탭 4: 결론 ===
     with tab_conclusion:
         st.header("결론")
         st.markdown("""
@@ -430,7 +472,7 @@ def main():
         with col3:
             st.metric("어업생산량 감소율 (2000-2023)", "-28%", "900천톤 (2023년)")
     
-    # === 탭 5: 참고자료 (사이드바 없음) ===
+    # === 탭 5: 참고자료 ===
     with tab_references:
         st.header("📚 참고자료 및 데이터 출처")
         st.markdown("""
@@ -439,11 +481,12 @@ def main():
         - **설명**: 1981년부터 현재까지의 일일 해수면 온도 및 편차 데이터
         - **해상도**: 0.25° × 0.25°
         - **기준**: 1971-2000년 평균
+        - **논문**: Huang et al. (2020), Banzon et al. (2016)
         
         ### NOAA Coral Reef Watch
         - **공식 사이트**: https://coralreefwatch.noaa.gov
         - **2024년 4월**: 제4차 글로벌 산호 백화 사건 공식 확인
-        - **2023년 12월**: Bleaching Alert Level 3-5 도입 (극심한 열 스트레스 대응)
+        - **2023년 12월**: Bleaching Alert Level 3-5 도입
         
         ### 국립해양조사원 (KODC)
         - **공식 사이트**: https://www.kodc.go.kr
