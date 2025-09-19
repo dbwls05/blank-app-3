@@ -1,5 +1,3 @@
-# streamlit_app.py - 탭별 독립 사이드바 + 연도 범위 필터링 + 보고서 본문 삽입
-
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -123,7 +121,8 @@ def plot_cartopy_anomaly(
     extent=None,
 ):
     """Cartopy 기반 해수온 편차 지도 생성"""
-    fig = plt.figure(figsize=(12.5, 6.5))
+    # 📏 크기 조정: 12.5, 6.5 → 11.5, 5.8 (스크롤 없이 보기 편하게)
+    fig = plt.figure(figsize=(11.5, 5.8))  # ← 이 줄 수정
     ax = plt.axes(projection=projection)
     
     ax.add_feature(cfeature.LAND, facecolor="lightgray", zorder=0)
@@ -174,12 +173,44 @@ def main():
     # === 탭 1: 서론 ===
     with tab_intro:
         st.header("서론 : 우리가 이 보고서를 쓰게 된 이유")
+
+        
+        
         st.markdown("""
         21세기 인류가 직면한 가장 큰 도전 중 하나는 기후 위기이다. 기후 위기의 다양한 현상 중에서도 해수온 상승은 단순히 바다만의 문제가 아니라, 지구 생태계 전체와 인류 사회의 미래와도 직결된다. 최근 수십 년간 바다는 점점 뜨거워지고 있으며, 이로 인해 해양 생태계는 심각한 변화의 소용돌이에 휘말리고 있다.
         
         따라서 본 보고서는 해수온 상승이 해양 환경과 생물 다양성, 나아가 사회·경제적 영역에까지 미치는 영향을 분석하고, 바다의 미래를 지키기 위한 대응 전략을 제안하는 데 목적이 있다.
         """)
     
+        st.markdown("---")
+
+        # ✅ 추가된 체크리스트 섹션
+        st.subheader("❓ 해수온 상승, 얼마나 알고 계신가요?")
+        st.info("아래의 내용 중 내가 알고 있는 사실에 체크해보세요!")
+
+        # 체크박스 상태를 리스트로 저장하고 개수를 셈
+        checked_list = [
+            st.checkbox("✔️ 한반도 주변 해수온이 전 세계 평균보다 더 빠르게 상승하고 있다.", value=False),
+            st.checkbox("✔️ 수온이 1~2°C만 올라도 산호초는 하얗게 변색되는 '백화 현상'을 겪는다.", value=False),
+            st.checkbox("✔️ 해수온 상승으로 인해 어종의 서식지가 바뀌어 어획량이 감소한다.", value=False),
+            st.checkbox("✔️ 해양 생물 다양성이 줄어드는 것은 해수온 상승과 직접적인 관련이 있다.", value=False),
+            st.checkbox("✔️ 해수온 상승은 지역 어민들의 소득 감소로 이어지는 사회적 문제이기도 하다.", value=False)
+        ]
+        checked_count = sum(checked_list)
+        
+        # 개수에 따라 다른 문구와 프로그레스 바 표시
+        st.progress(checked_count / 5.0)
+        
+        if checked_count == 1:
+            st.markdown("### 🤓 이제부터 차근차근 알아봐요!")
+        elif checked_count == 2:
+            st.markdown("### 📚 조금 더 알아가 봅시다!")
+        elif checked_count >= 3 and checked_count <= 4:
+            st.markdown("### 💡 이미 많은 것을 알고 계시는군요! 더 자세히 알아봐요.")
+        elif checked_count >= 5:
+            st.markdown("### 💯 똑똑박사시군요! 해수온 상승 문제에 대해 깊이 있는 통찰을 얻게 될 거예요.")
+            
+        
     # === ✅ 탭 2: 본론 1 — 해수온 지도 + 해수온 추이 + 산호 백화 ===
     with tab_analysis1:
         # ✅ 본론1 전용 사이드바
@@ -213,7 +244,7 @@ def main():
                     "북대서양(미 동부~유럽)",
                     "남태평양(적도~30°S)",
                 ],
-                index=2, key="map_preset"
+                index=0, key="map_preset"
             )
             
             bbox_dict = {
@@ -311,9 +342,9 @@ def main():
         ]
         
         fig1 = px.line(filtered_ktemp, x='year', y='avg_sea_temp',
-                     title=f'한반도 주변 평균 해수온 추이 ({start_year_ktemp}-{end_year_ktemp})',
-                     labels={'year': '연도', 'avg_sea_temp': '평균 해수온 (°C)'},
-                     markers=True)
+                      title=f'한반도 주변 평균 해수온 추이 ({start_year_ktemp}-{end_year_ktemp})',
+                      labels={'year': '연도', 'avg_sea_temp': '평균 해수온 (°C)'},
+                      markers=True)
         st.plotly_chart(fig1, use_container_width=True)
         
         # ✅ 보고서 본문 삽입 — 해수온 상승 추이 분석
@@ -324,7 +355,6 @@ def main():
         이러한 변화는 단순히 숫자상의 상승에 그치지 않고, 해양 생태계와 인류의 생활 전반에 중대한 영향을 미친다.
         """)
         
-        # ✅ 산호 백화 그래프 (연도 범위 필터링)
         st.markdown("---")
         st.subheader("🌡️ 산호 백화 현상 추이")
         
@@ -351,9 +381,9 @@ def main():
         ]
         
         fig2 = px.line(filtered_bleach, x='year', y='affected_reef_pct',
-                     title=f'산호초 영향률 추이 ({start_year_bleach}-{end_year_bleach})',
-                     labels={'year': '연도', 'affected_reef_pct': '영향 받은 산호초 (%)'},
-                     markers=True)
+                      title=f'산호초 영향률 추이 ({start_year_bleach}-{end_year_bleach})',
+                      labels={'year': '연도', 'affected_reef_pct': '영향 받은 산호초 (%)'},
+                      markers=True)
         st.plotly_chart(fig2, use_container_width=True)
         
         # ✅ 보고서 본문 삽입 — 산호 백화와 해양 환경 변화
@@ -363,7 +393,7 @@ def main():
         이는 해양 생물 다양성의 핵심인 산호초 생태계의 붕괴를 의미하며, 의존하는 어류 종의 감소로 직결됩니다.
         """)
     
-    # === ✅ 탭 3: 본론 2 — 생물 다양성 & 어업생산량 ===
+    # === 탭 3: 본론 2 — 생물 다양성 & 어업생산량 ===
     with tab_analysis2:
         # ✅ 본론2 전용 사이드바
         with st.sidebar:
@@ -413,9 +443,9 @@ def main():
         ]
         
         fig3 = px.line(filtered_species, x='year', y='vulnerable_species_pct',
-                     title=f'해양 취약종 비율 증가 추이 ({start_year_species}-{end_year_species})',
-                     labels={'year': '연도', 'vulnerable_species_pct': '취약종 비율 (%)'},
-                     markers=True)
+                      title=f'해양 취약종 비율 증가 추이 ({start_year_species}-{end_year_species})',
+                      labels={'year': '연도', 'vulnerable_species_pct': '취약종 비율 (%)'},
+                      markers=True)
         st.plotly_chart(fig3, use_container_width=True)
         
         # ✅ 보고서 본문 삽입 — 해양 생물 다양성 위기
@@ -435,9 +465,9 @@ def main():
         ]
         
         fig4 = px.area(filtered_fishery, x='year', y='fishery_production',
-                     title=f'한국 어업생산량 추이 ({start_year_fishery}-{end_year_fishery}, 단위: 천톤)',
-                     labels={'year': '연도', 'fishery_production': '생산량 (천톤)'},
-                     line_shape='spline')
+                      title=f'한국 어업생산량 추이 ({start_year_fishery}-{end_year_fishery}, 단위: 천톤)',
+                      labels={'year': '연도', 'fishery_production': '생산량 (천톤)'},
+                      line_shape='spline')
         st.plotly_chart(fig4, use_container_width=True)
         
         # ✅ 보고서 본문 삽입 — 사회·경제적 파급 효과
